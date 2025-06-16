@@ -356,12 +356,16 @@ func shoot(shooter_pid):
 func take_damage(amount):
 	health -= amount
 	
-	if health <= 0:
-		health = MAX_HEALTH
-		global_position = game.get_random_spawnpoint()
+	if health <= 0:		
+		global_position = game.graveyard.global_position
+		
+func show_card_select(card_selector : Control):
+	card_selector.visible = true
 
 func _physics_process(delta):
 	if !is_multiplayer_authority():
+		return
+	if health <= 0:
 		return
 	if !dset:
 		gdelta = delta

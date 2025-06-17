@@ -16,16 +16,16 @@ var bullets = {}
 
 var currentWinner : int
 
-var roundWinners = {}
+var roundWinners: Array[CharacterBody2D]
 var currentRound = 0
 @export var bullets_fired = 0
 @export var graveyard : Node2D
 
 func _ready():
-	graveyard = get_node("/root/Graveyard")
+	graveyard = get_node("/root/Game/Graveyard")
 	$MultiplayerSpawner.spawn_function = add_player
-	_player_spawn_points = $/root/Game/Players/SpawnPoints
-	_players_spawn_node = $/root/Game/Players
+	_player_spawn_points = $/root/Game/Level
+	_players_spawn_node = $/root/Game
 	card_selector = $/root/Game/UI/CardSelector
 	if _players_spawn_node == null:
 		print("Cant find players")
@@ -61,15 +61,15 @@ func get_random_spawnpoint():
 	
 func player_death(dead_player: PlatformerController2D):
 	var living_players = 0
-	var last_living_player
+	var last_living_player: PlatformerController2D
 	for p in players:
 		if p.health >= 0:
 			living_players += 1
 			last_living_player = p
 			
 		if(living_players == 1):			
-			roundWinners[roundWinners.size()] = last_living_player
+			roundWinners.append(last_living_player)
 			var victory_count = roundWinners.count(last_living_player)
 			currentWinner = last_living_player.multiplayer.get_unique_id()
-			if victory_count % 2 == 0:
+			if victory_count % 2 == 0:				
 				last_living_player.show_card_select(card_selector)

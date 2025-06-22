@@ -183,10 +183,11 @@ const MAX_HEALTH = 100
 var health = MAX_HEALTH
 const BULLET = preload("res://bullet/bullet.tscn")
 @onready var game: Game = get_node("/root/Game")
-
+@export var player_name = ""
 
 func _enter_tree():
 	set_multiplayer_authority(int(str(name)))
+
 
 func process_input():
 	$GunContainer.look_at(get_global_mouse_position())
@@ -343,8 +344,6 @@ func _process(_delta):
 			anim.speed_scale = 1
 			anim.play("roll")
 		
-		
-		
 @rpc("call_local")
 func shoot(shooter_pid):
 	var bullet = BULLET.instantiate()
@@ -358,17 +357,20 @@ func take_damage(amount):
 	if health <= 0:		
 		global_position = game.get_random_spawnpoint()
 		game.player_death(self)
-		health = MAX_HEALTH
+		#health = MAX_HEALTH
 			
 		
-func show_card_select(card_selector : Control):
-	print("Show card select")
-	card_selector.visible = true
+func show_card_select():
+	print("card_selector is null")
+	if game.card_selector != null:		
+		game.spawn_cards()
+	else:
+		print("card_selector is null")
 
 func _physics_process(delta):
 	if !is_multiplayer_authority():
 		return
-	if card_selector.visible == false:
+	if game.card_selector.visible == true:
 		return
 	if !dset:
 		gdelta = delta

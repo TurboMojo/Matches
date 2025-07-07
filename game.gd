@@ -12,13 +12,13 @@ var dead_players: Array[PlatformerController2D] = []
 var _players_spawn_node
 var _player_spawn_points
 var bullet_scene = preload("res://scenes/bullet.tscn")
-var card_selector
-var card_hand
+#var card_selector
+#var card_hand
 var bullets = {}
 @export var upgrade_cards : Array[Resource]
-var currentWinner : int
+var currentWinner : PlatformerController2D
 
-var roundWinners: Array[CharacterBody2D]
+var roundWinners: Array[PlatformerController2D]
 var currentRound = 0
 var selection_options = 3
 @export var bullets_fired = 0
@@ -32,8 +32,8 @@ func _ready():
 	_player_spawn_points = $/root/Game/Level
 	_players_spawn_node = $/root/Game
 	
-	card_selector = $/root/Game/UI/CardSelector
-	card_hand = $/root/Game/UI/CardSelector/Hand
+	#card_selector = $/root/Game/UI/CardSelector
+	#card_hand = $/root/Game/UI/CardSelector/Hand
 	
 	for card_path in DirAccess.get_files_at("res://cards/"):
 		upgrade_cards.append(load("res://cards/"+card_path))
@@ -62,14 +62,17 @@ func _on_join_pressed():
 	multiplayer_ui.hide()
 
 func add_player(pid):
-	var player = PLAYER.instantiate()
+	var player = PLAYER.instantiate()	
+	player.set_multiplayer_authority(pid)
 	player.name = str(pid)
-	player.player_name = next_player_name
+	player.player_name = str(pid)
 	next_player_name = ""
 	player.global_position = $Level.get_child(players.size()).global_position
 	players.append(player)
-	if multiplayer.get_peers().size() > 1:
-		player.player_name = "Player"+str((multiplayer.get_peers().size))
+	print(str(players.size())+" players")
+	
+	if multiplayer.get_peers().size() > 0:	
+		player.player_name = "Player 2"
 	else:
 		player.player_name = "Host"
 	return player
@@ -77,42 +80,57 @@ func add_player(pid):
 func get_random_spawnpoint():
 	return $Level.get_children().pick_random().global_position
 
-@rpc("call_local", "any_peer")
-func spawn_cards():
-	print("spawn_cards")
-	for count in selection_options:		
-		var card = upgrade_cards.pick_random()
-		if card != null:
-			#print("card: ", card.name)
-			var new_card = card.instantiate()
-			card_hand.add_child(new_card)
-		else:
-			print("card is null")
+#@rpc("call_local", "any_peer")
+#func spawn_cards():
+	#print("spawn_cards")
+	#print("currentWinner: "+str(currentWinner)+" multiplayer_id: "+str(multiplayer.get_unique_id()))
+	#if currentWinner != multiplayer.get_unique_id():
+	#	pass
+	#for count in selection_options:		
+	#	var card = upgrade_cards.pick_random()
+	#	if card != null:
+	#		#print("card: ", card.name)
+	#		var new_card = card.instantiate()
+	#   	card_hand.add_child(new_card)
+	#	else:
+	#		print("card is null")
 
-	
-func despawn_cards():
-	for n in card_hand.get_children():
-		card_hand.remove_child(n)
-		n.queue_free()
+		
+@rpc("any_peer", "call_local")
+func take_damage(player_id: int, amount: int):
+	var body = get_body_from_id(player_id)
+	body.health -= amount	
+	if body.health <= 0:		
+		body.global_position = get_random_spawnpoint()
+		player_death(body)
+		#health = MAX_HEALTH
+		
+func get_body_from_id(player_id:int):
+	for player in players:
+		if player.get_multiplayer_authority() == player_id:
+			return player
 
 func player_death(dead_player: PlatformerController2D):
 	var last_living_player: PlatformerController2D	
+	#var last_living_player: String	
 	dead_players.append(dead_player)
-	print (players.size(), " players")
-	print (dead_players.size(), " dead players")
+	#print (players.size(), " players")
+	#print (dead_players.size(), " dead players")
 	for dp in dead_players:
 		print(dp.player_name+" is dead")
 	for player in players:
-		if not dead_players.has(player):
-			print("Winner is "+player.player_name)
+		if not dead_players.has(player):			
 			last_living_player = player
+			
 	
 	if last_living_player != null:
 		roundWinners.append(last_living_player)
 		var victory_count = roundWinners.count(last_living_player)
-		currentWinner = last_living_player.multiplayer.get_unique_id()
+		currentWinner = last_living_player		
+		print("Winner is "+currentWinner.player_name)
 		dead_players.clear()
-		if victory_count % 2 == 0:			
-			rpc_id(currentWinner, "spawn_cards")
+		if victory_count % 2 == 0:
+			#rpc_id(."spawn_cards")
+			currentWinner.spawn_cards()
 	else:
 		print("last_living_player is null")

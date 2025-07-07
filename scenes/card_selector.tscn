@@ -13,10 +13,6 @@ grow_vertical = 2
 script = ExtResource("1_ykva4")
 card_deck = [ExtResource("2_l5nio")]
 
-[node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("uid://j1poh1kvtthq")
-spawn_path = NodePath("../Hand")
-
 [node name="Hand" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15

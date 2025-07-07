@@ -183,13 +183,16 @@ const MAX_HEALTH = 100
 var health = MAX_HEALTH
 const BULLET = preload("res://bullet/bullet.tscn")
 @onready var game: Game = get_node("/root/Game")
+@onready var card_selector: card_selector = get_node("/root/Game/UI/CardSelector")
 @export var player_name = ""
 
-func _enter_tree():
-	set_multiplayer_authority(int(str(name)))
-
+#func _enter_tree():	
+	#print("player_name: "+player_name)
+	#set_multiplayer_authority(int(str(player_name)))
 
 func process_input():
+	if !is_multiplayer_authority():
+		return
 	$GunContainer.look_at(get_global_mouse_position())
 	
 	if get_global_mouse_position().x < global_position.x:
@@ -351,15 +354,29 @@ func shoot(shooter_pid):
 	get_parent().add_child(bullet)
 	bullet.transform = $GunContainer/GunSprite/Muzzle.global_transform
 
-@rpc("any_peer")
-func take_damage(amount):
+@rpc("any_peer", "call_local")
+func take_damage(player_id: int, amount: int):
 	health -= amount	
 	if health <= 0:		
 		global_position = game.get_random_spawnpoint()
 		game.player_death(self)
 		#health = MAX_HEALTH
-			
 		
+@rpc("any_peer", "call_local")	
+func spawn_cards():
+	print("game.currentWinner: ",game.currentWinner.player_name)
+	print("player_name: ",player_name)
+	if game.currentWinner.player_name != player_name:
+		pass
+	for count in game.selection_options:		
+		var card = game.upgrade_cards.pick_random()
+		if card != null:
+			#print("card: ", card.name)
+			var new_card = card.instantiate()
+			card_selector.add_child(new_card)
+		else:
+			print("card is null")
+			
 func show_card_select():
 	print("card_selector is null")
 	if game.card_selector != null:		
@@ -370,7 +387,8 @@ func show_card_select():
 func _physics_process(delta):
 	if !is_multiplayer_authority():
 		return
-	if game.card_selector.visible == true:
+	
+	if card_selector.visible == true:
 		return
 	if !dset:
 		gdelta = delta

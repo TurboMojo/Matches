@@ -1,6 +1,7 @@
 extends Area2D
 
 var speed = 250
+@export var damage = 25
 
 func _physics_process(delta):
 	position += transform.x * speed * delta
@@ -11,7 +12,7 @@ func _on_body_entered(body):
 		return
 	
 	if body is PlatformerController2D:
-		body.take_damage.rpc_id(body.get_multiplayer_authority(), 25)
+		body.game.take_damage.rpc_id(1, body.get_multiplayer_authority(), damage)
 	
 	remove_bullet.rpc()
 

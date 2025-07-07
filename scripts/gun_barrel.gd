@@ -9,6 +9,8 @@ var id : int
 
 
 func _physics_process(_delta: float) -> void:
+	if !is_multiplayer_authority():
+		return
 	look_at(get_global_mouse_position())	
 
 func _input(event):

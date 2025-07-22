@@ -12,7 +12,7 @@ func _on_body_entered(body):
 		return
 	
 	if body is PlatformerController2D:
-		body.game.take_damage.rpc_id(1, body.get_multiplayer_authority(), damage)
+		body.game.take_damage.rpc_id(1, body.player_id, damage)
 	
 	remove_bullet.rpc()
 

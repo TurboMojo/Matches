@@ -13,7 +13,7 @@ var _players_spawn_node
 var _player_spawn_points
 var bullet_scene = preload("res://scenes/bullet.tscn")
 #var card_selector
-#var card_hand
+var card_hand
 var bullets = {}
 @export var upgrade_cards : Array[Resource]
 var currentWinner : PlatformerController2D
@@ -33,7 +33,7 @@ func _ready():
 	_players_spawn_node = $/root/Game
 	
 	#card_selector = $/root/Game/UI/CardSelector
-	#card_hand = $/root/Game/UI/CardSelector/Hand
+	card_hand = $/root/Game/UI/CardSelector/Hand
 	
 	for card_path in DirAccess.get_files_at("res://cards/"):
 		upgrade_cards.append(load("res://cards/"+card_path))
@@ -66,6 +66,7 @@ func add_player(pid):
 	player.set_multiplayer_authority(pid)
 	player.name = str(pid)
 	player.player_name = str(pid)
+	player.player_id =  pid
 	next_player_name = ""
 	player.global_position = $Level.get_child(players.size()).global_position
 	players.append(player)
@@ -80,20 +81,19 @@ func add_player(pid):
 func get_random_spawnpoint():
 	return $Level.get_children().pick_random().global_position
 
-#@rpc("call_local", "any_peer")
-#func spawn_cards():
-	#print("spawn_cards")
-	#print("currentWinner: "+str(currentWinner)+" multiplayer_id: "+str(multiplayer.get_unique_id()))
-	#if currentWinner != multiplayer.get_unique_id():
-	#	pass
-	#for count in selection_options:		
-	#	var card = upgrade_cards.pick_random()
-	#	if card != null:
-	#		#print("card: ", card.name)
-	#		var new_card = card.instantiate()
-	#   	card_hand.add_child(new_card)
-	#	else:
-	#		print("card is null")
+@rpc("call_local", "any_peer")
+func spawn_cards():
+	print("spawn_cards")
+	print("currentWinner: "+str(currentWinner)+" multiplayer_id: "+str(multiplayer.get_unique_id()))
+	if get_id_from_body(currentWinner) != multiplayer.get_unique_id():
+		pass
+	for count in selection_options:		
+		var card = upgrade_cards.pick_random()
+		if card != null:
+			var new_card = card.instantiate()
+			card_hand.add_child(new_card)
+		else:
+			print("card is null")
 
 		
 @rpc("any_peer", "call_local")
@@ -109,28 +109,26 @@ func get_body_from_id(player_id:int):
 	for player in players:
 		if player.get_multiplayer_authority() == player_id:
 			return player
+			
+func get_id_from_body(body: PlatformerController2D):
+	for player in players:
+		if(player == body):
+			return player.player_id
 
 func player_death(dead_player: PlatformerController2D):
-	var last_living_player: PlatformerController2D	
-	#var last_living_player: String	
+	var last_living_player: PlatformerController2D
 	dead_players.append(dead_player)
-	#print (players.size(), " players")
-	#print (dead_players.size(), " dead players")
-	for dp in dead_players:
-		print(dp.player_name+" is dead")
 	for player in players:
 		if not dead_players.has(player):			
-			last_living_player = player
-			
+			last_living_player = player	
 	
 	if last_living_player != null:
+		# I'm not sure why this is in an if block, but I don't feel like finding out right now.
+		# TODO: test and see if this if statement is needed and remove it if not.
 		roundWinners.append(last_living_player)
 		var victory_count = roundWinners.count(last_living_player)
 		currentWinner = last_living_player		
 		print("Winner is "+currentWinner.player_name)
 		dead_players.clear()
 		if victory_count % 2 == 0:
-			#rpc_id(."spawn_cards")
-			currentWinner.spawn_cards()
-	else:
-		print("last_living_player is null")
+			rpc_id(currentWinner.player_id,"spawn_cards")

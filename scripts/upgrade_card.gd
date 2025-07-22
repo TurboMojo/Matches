@@ -52,7 +52,8 @@ func ApplyUpgrade():
 
 @rpc("call_local")
 func request_apply_upgrade():	
-	cardSelector.despawn_cards()
+	print("apply upgrade")
+	#cardSelector.despawn_cards()
 	#pass
 	#if game.currentWinner == multiplayer.get_unique_id():
 	#	game.card_selector.visible = false

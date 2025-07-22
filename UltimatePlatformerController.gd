@@ -183,8 +183,9 @@ const MAX_HEALTH = 100
 var health = MAX_HEALTH
 const BULLET = preload("res://bullet/bullet.tscn")
 @onready var game: Game = get_node("/root/Game")
-@onready var card_selector: card_selector = get_node("/root/Game/UI/CardSelector")
+@onready var active_card_selector: card_selector = get_node("/root/Game/UI/CardSelector")
 @export var player_name = ""
+@export var player_id: int
 
 #func _enter_tree():	
 	#print("player_name: "+player_name)
@@ -355,7 +356,7 @@ func shoot(shooter_pid):
 	bullet.transform = $GunContainer/GunSprite/Muzzle.global_transform
 
 @rpc("any_peer", "call_local")
-func take_damage(player_id: int, amount: int):
+func take_damage(amount: int):
 	health -= amount	
 	if health <= 0:		
 		global_position = game.get_random_spawnpoint()
@@ -373,7 +374,7 @@ func spawn_cards():
 		if card != null:
 			#print("card: ", card.name)
 			var new_card = card.instantiate()
-			card_selector.add_child(new_card)
+			active_card_selector.add_child(new_card)
 		else:
 			print("card is null")
 			
@@ -388,8 +389,8 @@ func _physics_process(delta):
 	if !is_multiplayer_authority():
 		return
 	
-	if card_selector.visible == true:
-		return
+	#if card_selector.visible == true:
+	#	return
 	if !dset:
 		gdelta = delta
 		dset = true

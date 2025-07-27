@@ -47,27 +47,29 @@ func ApplyUpgrade():
 	#else:
 	#	MultiplayerManager.game.cardHand.visible = false
 	#	request_apply_upgrade()
-	rpc("request_apply_upgrade")
 	print("Requesting to apply upgrade over the network")
+	rpc_id(game.currentWinner,"request_apply_upgrade")
+	
 
 @rpc("call_local")
 func request_apply_upgrade():	
 	print("apply upgrade")
-	#cardSelector.despawn_cards()
-	#pass
-	#if game.currentWinner == multiplayer.get_unique_id():
-	#	game.card_selector.visible = false
-	#	print("Upgrade applied on server!")
-	#elif !multiplayer.is_server():
-	#	game.card_selector.visible = false
-	#	print("Upgrade applied on server!")
-	#else:
-	#	print("Upgrade not applied")
+	game.isCardSelection = false
+	Globals.game.card_hand.despawn_cards()
+	
+	if game.currentWinner == multiplayer.get_unique_id():
+		game.card_hand.visible = false
+		print("Upgrade applied on server!")
+	elif !multiplayer.is_server():
+		game.card_hand.visible = false
+		print("Upgrade applied on server!")
+	else:
+		print("Upgrade not applied")
 
 
-#func _on_button_mouse_entered() -> void:	
-	#MultiplayerManager.game.isSelectingCard = true
+func _on_button_mouse_entered() -> void:	
+	Globals.game.isSelectingCard = true
 
 
-#func _on_button_mouse_exited() -> void:	
-	#MultiplayerManager.game.isSelectingCard = false
+func _on_button_mouse_exited() -> void:	
+	Globals.game.isSelectingCard = false

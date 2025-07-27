@@ -201,7 +201,7 @@ func process_input():
 	else:
 		$GunContainer/GunSprite.flip_v = false
 	
-	if Input.is_action_just_pressed("shoot"):
+	if Input.is_action_just_pressed("shoot") && game.isCardSelection == false:
 		shoot.rpc(multiplayer.get_unique_id())
 
 func _ready():
@@ -363,27 +363,20 @@ func take_damage(amount: int):
 		game.player_death(self)
 		#health = MAX_HEALTH
 		
-@rpc("any_peer", "call_local")	
-func spawn_cards():
-	print("game.currentWinner: ",game.currentWinner.player_name)
-	print("player_name: ",player_name)
-	if game.currentWinner.player_name != player_name:
-		pass
-	for count in game.selection_options:		
-		var card = game.upgrade_cards.pick_random()
-		if card != null:
+#@rpc("any_peer", "call_local")	
+#func spawn_cards():
+#	print("game.currentWinner: ",game.currentWinner.player_name)
+#	print("player_name: ",player_name)
+#	if game.currentWinner.player_name != player_name:
+#		pass
+#	for count in game.selection_options:		
+#		var card = game.upgrade_cards.pick_random()
+#		if card != null:
 			#print("card: ", card.name)
-			var new_card = card.instantiate()
-			active_card_selector.add_child(new_card)
-		else:
-			print("card is null")
-			
-func show_card_select():
-	print("card_selector is null")
-	if game.card_selector != null:		
-		game.spawn_cards()
-	else:
-		print("card_selector is null")
+#			var new_card = card.instantiate()
+#			active_card_selector.add_child(new_card)
+#		else:
+#			print("card is null")
 
 func _physics_process(delta):
 	if !is_multiplayer_authority():

@@ -13,11 +13,11 @@ var _players_spawn_node
 var _player_spawn_points
 var bullet_scene = preload("res://scenes/bullet.tscn")
 #var card_selector
-var card_hand
+@onready var card_hand = get_node("/root/Game/UI/CardSelector")
 var bullets = {}
 @export var upgrade_cards : Array[Resource]
-var currentWinner : PlatformerController2D
-
+@export var currentWinner : int
+@export var isSelectingCard = false
 var roundWinners: Array[PlatformerController2D]
 var currentRound = 0
 var selection_options = 3
@@ -31,9 +31,6 @@ func _ready():
 	$MultiplayerSpawner.spawn_function = add_player
 	_player_spawn_points = $/root/Game/Level
 	_players_spawn_node = $/root/Game
-	
-	#card_selector = $/root/Game/UI/CardSelector
-	card_hand = $/root/Game/UI/CardSelector/Hand
 	
 	for card_path in DirAccess.get_files_at("res://cards/"):
 		upgrade_cards.append(load("res://cards/"+card_path))
@@ -81,16 +78,32 @@ func add_player(pid):
 func get_random_spawnpoint():
 	return $Level.get_children().pick_random().global_position
 
+@export var isCardSelection = false
+
 @rpc("call_local", "any_peer")
-func spawn_cards():
-	print("spawn_cards")
-	print("currentWinner: "+str(currentWinner)+" multiplayer_id: "+str(multiplayer.get_unique_id()))
-	if get_id_from_body(currentWinner) != multiplayer.get_unique_id():
-		pass
+func spawn_cards(winner: int):		
+	var winnerObject = get_body_from_id(winner)
+	if winnerObject == null:
+		print("winner is null")
+		return
+	#print("winner: "+str(winnerObject.player_name)+" multiplayer_id: "+str(multiplayer.get_unique_id()))
+	print()
+	if get_id_from_body(winnerObject) != multiplayer.get_unique_id():
+		print("not me, returning")
+		return
+	print("me")
+	card_hand = get_node("/root/Game/UI/CardSelector")
+	isCardSelection = true
+	if winnerObject == null:
+		print("winner is null")
+		return
 	for count in selection_options:		
 		var card = upgrade_cards.pick_random()
 		if card != null:
 			var new_card = card.instantiate()
+			if card_hand == null:
+				print ("card_hand is null")
+				return
 			card_hand.add_child(new_card)
 		else:
 			print("card is null")
@@ -127,8 +140,8 @@ func player_death(dead_player: PlatformerController2D):
 		# TODO: test and see if this if statement is needed and remove it if not.
 		roundWinners.append(last_living_player)
 		var victory_count = roundWinners.count(last_living_player)
-		currentWinner = last_living_player		
-		print("Winner is "+currentWinner.player_name)
-		dead_players.clear()
+		currentWinner = last_living_player.player_id		
+		print("Winner is "+last_living_player.player_name)
+		#dead_players.clear()
 		if victory_count % 2 == 0:
-			rpc_id(currentWinner.player_id,"spawn_cards")
+			rpc_id(currentWinner,"spawn_cards", currentWinner)

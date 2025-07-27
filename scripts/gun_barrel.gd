@@ -14,7 +14,7 @@ func _physics_process(_delta: float) -> void:
 	look_at(get_global_mouse_position())	
 
 func _input(event):
-	if event.is_action_pressed("shoot") and is_multiplayer_authority():
+	if event.is_action_pressed("shoot") and is_multiplayer_authority() and game.isCardSelection == false:
 		spawn_bullet.rpc(multiplayer.get_unique_id(), SPEED)
 
 @rpc("call_local")

@@ -20,7 +20,7 @@ sources/0 = SubResource("TileSetAtlasSource_wwohc")
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_feb5d"]
 properties/0/path = NodePath(".:isCardSelection")
 properties/0/spawn = true
-properties/0/replication_mode = 1
+properties/0/replication_mode = 2
 
 [node name="Game" type="Node" node_paths=PackedStringArray("graveyard")]
 script = ExtResource("1_qdjc2")

@@ -179,8 +179,10 @@ var rollTap
 var downTap
 var twirlTap
 
+@export_category("Custom")
+
 const MAX_HEALTH = 100
-var health = MAX_HEALTH
+@export var health = MAX_HEALTH
 const BULLET = preload("res://bullet/bullet.tscn")
 @onready var game: Game = get_node("/root/Game")
 @onready var active_card_selector: card_selector = get_node("/root/Game/UI/CardSelector")
@@ -190,6 +192,9 @@ const BULLET = preload("res://bullet/bullet.tscn")
 #func _enter_tree():	
 	#print("player_name: "+player_name)
 	#set_multiplayer_authority(int(str(player_name)))
+
+func get_max_health():
+	return MAX_HEALTH
 
 func process_input():
 	if !is_multiplayer_authority():
@@ -358,10 +363,12 @@ func shoot(shooter_pid):
 @rpc("any_peer", "call_local")
 func take_damage(amount: int):
 	health -= amount	
-	if health <= 0:		
-		global_position = game.get_random_spawnpoint()
-		game.player_death(self)
-		#health = MAX_HEALTH
+	if health <= 0:
+		game.player_death(player_id)
+		health = get_max_health()
+		
+func move_to_spawnpoint():
+	global_position = game.get_random_spawnpoint()
 		
 #@rpc("any_peer", "call_local")	
 #func spawn_cards():

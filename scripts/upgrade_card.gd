@@ -2,7 +2,7 @@ extends Node
 
 class_name upgrade_card
 
-@onready var player : PlatformerController2D # = get_parent().get_parent().get_parent()
+
 @export_range(0, 5) var jumpHeightMultiplier : float = 1.0 
 @export var jumps : int = 1
 @export var gravityScaleMultiplier : float = 1.0
@@ -53,18 +53,35 @@ func ApplyUpgrade():
 
 @rpc("call_local")
 func request_apply_upgrade():	
-	print("apply upgrade")
-	game.isCardSelection = false
 	Globals.game.card_hand.despawn_cards()
+	Globals.player.jumpHeight = jumpHeightMultiplier * Globals.player.jumpHeight
+	Globals.player.jumps = jumps
+	Globals.player.gravityScale = gravityScaleMultiplier * Globals.player.gravityScale
+	Globals.player.terminalVelocity = terminalVelocity
+	Globals.player.descendingGravityFactor = descendingGravityFactor
+	Globals.player.shortHopAkaVariableJumpHeight = variableJumpHeight
+	Globals.player.coyoteTime = coyoteTimeMultiplier * Globals.player.coyoteTime
+	Globals.player.jumpBuffering = jumpBufferingMultiplier * Globals.player.jumpBuffering
+	Globals.player.wallJump = wallJump
+	Globals.player.inputPauseAfterWallJump = inputPauseAfterWallJump
+	Globals.player.wallKickAngle = wallKickAngle
+	Globals.player.wallSliding = wallSliding
+	Globals.player.wallLatching = wallLatching
+	Globals.player.wallLatchingModifer = wallLatchingModifer
+	Globals.player.dashType = dashType
+	Globals.player.dashes = dashes
+	Globals.player.dashCancel = dashCancel
+	Globals.player.dashLength = dashLength
+	Globals.player.cornerCutting = cornerCutting
+	Globals.player.correctionAmount = correctionAmount
+	Globals.player.crouch = crouch
+	Globals.player.canRoll = canRoll
+	Globals.player.rollLength = rollLength
+	Globals.player.groundPound = groundPound
+	Globals.player.groundPoundPause = groundPoundPause
+	Globals.player.upToCancel = upToCancel
 	
-	if game.currentWinner == multiplayer.get_unique_id():
-		game.card_hand.visible = false
-		print("Upgrade applied on server!")
-	elif !multiplayer.is_server():
-		game.card_hand.visible = false
-		print("Upgrade applied on server!")
-	else:
-		print("Upgrade not applied")
+	
 
 
 func _on_button_mouse_entered() -> void:	

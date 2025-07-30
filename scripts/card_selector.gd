@@ -11,13 +11,15 @@ var selectable_cards = []
 var cardsDrawn = 0
 
 @onready var hand = get_node("/root/Game/UI/CardSelector")
-
+@onready var game: Game = get_node("/root/Game")
 
 func start_card_selection():
 	pass
 	
 func despawn_cards():
-	pass
-	#for n in hand.get_children():
-	#	hand.remove_child(n)
-	#	n.queue_free()
+	game.isCardSelection = false
+	for n in hand.get_children():
+		hand.remove_child(n)
+		n.queue_free()
+	for player in game.dead_players:
+		rpc_id(1, "player.move_to_spawnpoint")

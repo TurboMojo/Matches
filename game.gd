@@ -6,8 +6,8 @@ extends Node
 const PLAYER = preload("res://player/platformer_player.tscn")
 #const PLAYER = preload("res://player/player.tscn")
 var peer = ENetMultiplayerPeer.new()
-var players: Array[PlatformerController2D] = []
-var dead_players: Array[PlatformerController2D] = []
+@export var players: Array[PlatformerController2D] = []
+@export var dead_players: Array[int] = []
 #var players: Array[Player] = []
 var _players_spawn_node
 var _player_spawn_points
@@ -18,7 +18,7 @@ var bullets = {}
 @export var upgrade_cards : Array[Resource]
 @export var currentWinner : int
 @export var isSelectingCard = false
-var roundWinners: Array[PlatformerController2D]
+var roundWinners: Array[int]
 var currentRound = 0
 var selection_options = 3
 @export var bullets_fired = 0
@@ -67,6 +67,7 @@ func add_player(pid):
 	next_player_name = ""
 	player.global_position = $Level.get_child(players.size()).global_position
 	players.append(player)
+	Globals.player = player
 	print(str(players.size())+" players")
 	
 	if multiplayer.get_peers().size() > 0:	
@@ -85,13 +86,10 @@ func spawn_cards(winner: int):
 	var winnerObject = get_body_from_id(winner)
 	if winnerObject == null:
 		print("winner is null")
-		return
-	#print("winner: "+str(winnerObject.player_name)+" multiplayer_id: "+str(multiplayer.get_unique_id()))
-	print()
+		return	
 	if get_id_from_body(winnerObject) != multiplayer.get_unique_id():
-		print("not me, returning")
 		return
-	print("me")
+	
 	card_hand = get_node("/root/Game/UI/CardSelector")
 	isCardSelection = true
 	if winnerObject == null:
@@ -108,40 +106,49 @@ func spawn_cards(winner: int):
 		else:
 			print("card is null")
 
-		
 @rpc("any_peer", "call_local")
-func take_damage(player_id: int, amount: int):
+func respawn(player_id: int):
 	var body = get_body_from_id(player_id)
-	body.health -= amount	
-	if body.health <= 0:		
-		body.global_position = get_random_spawnpoint()
-		player_death(body)
-		#health = MAX_HEALTH
+	body.global_position = get_random_spawnpoint()
+		
+#@rpc("any_peer", "call_local")
+#func take_damage(player_id: int, amount: int):
+#	var body = get_body_from_id(player_id)
+#	if body == null:
+#		print("body is null")
+#		return
+#	body.health -= amount	
+#	if body.health <= 0:
+#		player_death(body)
+#		body.health = body.get_max_health()
 		
 func get_body_from_id(player_id:int):
 	for player in players:
-		if player.get_multiplayer_authority() == player_id:
+		if player.player_id == player_id:
 			return player
 			
 func get_id_from_body(body: PlatformerController2D):
 	for player in players:
 		if(player == body):
-			return player.player_id
+			return body.player_id
 
-func player_death(dead_player: PlatformerController2D):
-	var last_living_player: PlatformerController2D
-	dead_players.append(dead_player)
+func player_death(dead_player_id: int):
+	var last_living_player: PlatformerController2D = get_body_from_id(dead_player_id)
+	dead_players.append(dead_player_id)
 	for player in players:
-		if not dead_players.has(player):			
-			last_living_player = player	
+		if not dead_players.has(get_id_from_body(player)):
+			last_living_player = player
 	
 	if last_living_player != null:
 		# I'm not sure why this is in an if block, but I don't feel like finding out right now.
 		# TODO: test and see if this if statement is needed and remove it if not.
-		roundWinners.append(last_living_player)
-		var victory_count = roundWinners.count(last_living_player)
+		roundWinners.append(last_living_player.player_id)
+		var victory_count = roundWinners.count(last_living_player.player_id)
 		currentWinner = last_living_player.player_id		
 		print("Winner is "+last_living_player.player_name)
 		#dead_players.clear()
 		if victory_count % 2 == 0:
 			rpc_id(currentWinner,"spawn_cards", currentWinner)
+			get_body_from_id(dead_player_id).global_position = graveyard.global_position
+		else:
+			get_body_from_id(dead_player_id).global_position = get_random_spawnpoint()

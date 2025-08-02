@@ -108,6 +108,7 @@ func spawn_cards(winner: int):
 
 @rpc("any_peer", "call_local")
 func respawn(player_id: int):
+	print("respawning ",get_body_from_id(player_id).player_name)
 	var body = get_body_from_id(player_id)
 	body.global_position = get_random_spawnpoint()
 		

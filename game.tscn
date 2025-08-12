@@ -17,12 +17,12 @@ tile_size = Vector2i(8, 8)
 physics_layer_0/collision_layer = 1
 sources/0 = SubResource("TileSetAtlasSource_wwohc")
 
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_fc0e3"]
-
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_feb5d"]
-properties/0/path = NodePath(".:isCardSelection")
+properties/0/path = NodePath("..:isCardSelection")
 properties/0/spawn = true
-properties/0/replication_mode = 2
+properties/0/replication_mode = 1
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_fc0e3"]
 
 [node name="Game" type="Node" node_paths=PackedStringArray("graveyard")]
 script = ExtResource("1_qdjc2")
@@ -36,13 +36,16 @@ tile_set = SubResource("TileSet_66pxm")
 position = Vector2(28, 54)
 
 [node name="SpawnPoint2" type="Marker2D" parent="Level"]
-position = Vector2(20, 31)
+position = Vector2(81, 24)
 
 [node name="SpawnPoint3" type="Marker2D" parent="Level"]
-position = Vector2(42, 23)
+position = Vector2(142, 10)
 
 [node name="SpawnPoint4" type="Marker2D" parent="Level"]
-position = Vector2(51, 38)
+position = Vector2(230, 14)
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Level"]
+replication_config = SubResource("SceneReplicationConfig_feb5d")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(125, 40)
@@ -93,7 +96,7 @@ layout_mode = 2
 text = "Join"
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("uid://ckfdwsfyhadii", "uid://c8ry51r8nj", "uid://caywgk4uupqbn", "uid://cmurcpega10ab")
+_spawnable_scenes = PackedStringArray("uid://ckfdwsfyhadii", "uid://daelk2mg0nk5a")
 spawn_path = NodePath("..")
 
 [node name="Graveyard" type="Node2D" parent="."]
@@ -102,9 +105,6 @@ position = Vector2(-108, 13)
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="Graveyard"]
 replication_interval = 1.0
 replication_config = SubResource("SceneReplicationConfig_fc0e3")
-
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-replication_config = SubResource("SceneReplicationConfig_feb5d")
 
 [connection signal="pressed" from="UI/Multiplayer/VBoxContainer/Host" to="." method="_on_host_pressed"]
 [connection signal="pressed" from="UI/Multiplayer/VBoxContainer/Join" to="." method="_on_join_pressed"]

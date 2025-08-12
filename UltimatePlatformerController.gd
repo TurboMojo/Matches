@@ -161,64 +161,75 @@ var anim
 var col
 var animScaleLock : Vector2
 
-#Input Variables for the whole script
-var upHold
-var downHold
-var leftHold
-var leftTap
-var leftRelease
-var rightHold
-var rightTap
-var rightRelease
-var jumpTap
-var jumpRelease
-var runHold
-var latchHold
-var dashTap
-var rollTap
-var downTap
-var twirlTap
+
 
 @export_category("Custom")
 
 const MAX_HEALTH = 100
 @export var health = MAX_HEALTH
-const BULLET = preload("res://bullet/bullet.tscn")
+
 @onready var game: Game = get_node("/root/Game")
 @onready var active_card_selector: card_selector = get_node("/root/Game/UI/CardSelector")
 @export var player_name = ""
-@export var player_id: int
+#@export var player_id: int
+@export var input_direction: Vector2
+@export var shooting : bool = false
 
-#func _enter_tree():	
-	#print("player_name: "+player_name)
-	#set_multiplayer_authority(int(str(player_name)))
+var hasFocus
+
+func _enter_tree():	
+	set_multiplayer_authority(int(name))
+	$MultiplayerSynchronizer.set_multiplayer_authority(int(name))
+	$PlayerInput.set_multiplayer_authority(int(name))
+	
+func _ready():	
+	#if not is_multiplayer_authority(): return
+	wasMovingR = true
+	anim = PlayerSprite
+	col = PlayerCollider
+	get_viewport().focus_entered.connect(_on_window_focus_in) 
+	get_viewport().focus_exited.connect(_on_window_focus_out)
+	_updateData()
 
 func get_max_health():
 	return MAX_HEALTH
 
-func process_input():
-	if !is_multiplayer_authority():
-		return
-	$GunContainer.look_at(get_global_mouse_position())
+func process_input():	
+	#if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
+	#	return	
 	
-	if get_global_mouse_position().x < global_position.x:
-		$GunContainer/GunSprite.flip_v = true
-	else:
-		$GunContainer/GunSprite.flip_v = false
-	
-	if Input.is_action_just_pressed("shoot") && game.isCardSelection == false:
-		shoot.rpc(multiplayer.get_unique_id())
 
-func _ready():
-	wasMovingR = true
-	anim = PlayerSprite
-	col = PlayerCollider
-	
-	_updateData()
-	
+	if Input.is_action_just_released("shoot"):
+		shooting = false
+	if Input.is_action_just_pressed("shoot") && game.isCardSelection == false:
+		shooting = true
+
+		if int(name) == multiplayer.get_unique_id():
+			shoot(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
+		else:
+			shoot.rpc(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
+			
+	if int(name) == multiplayer.get_unique_id():		
+		$GunContainer.look_at(get_global_mouse_position())	
+		if get_global_mouse_position().x < global_position.x:
+			$GunContainer/GunSprite.flip_v = true
+		else:
+			$GunContainer/GunSprite.flip_v = false
+	else:
+		print("stop doing that!")
+
+
+
+func _on_window_focus_in(): hasFocus = true
+
+func _on_window_focus_out(): hasFocus = false
+
 func _updateData():
-	if !is_multiplayer_authority():
-		return
+	if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
+		return	
+	col = PlayerCollider
+	colliderScaleLockY = col.scale.y
+		
 	acceleration = maxSpeed / timeToReachMaxSpeed
 	deceleration = -maxSpeed / timeToReachZeroSpeed
 	
@@ -231,7 +242,8 @@ func _updateData():
 	maxSpeedLock = maxSpeed
 	
 	animScaleLock = abs(anim.scale)
-	colliderScaleLockY = col.scale.y
+
+	
 	colliderPosLockY = col.position.y
 	
 	if timeToReachMaxSpeed == 0:
@@ -282,20 +294,26 @@ func _updateData():
 	
 
 func _process(_delta):
-	if !is_multiplayer_authority():
+	#if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
+	#	return
+
+	if !hasFocus:
 		return
+	#if not name.to_int() == multiplayer.get_unique_id(): return
+	#if not is_multiplayer_authority():
+	#	return
 	#INFO animations
 	#directions
-	if is_on_wall() and !is_on_floor() and latch and wallLatching and ((wallLatchingModifer and latchHold) or !wallLatchingModifer):
+	if is_on_wall() and !is_on_floor() and latch and wallLatching and (($PlayerInput.wallLatchingModifer and $PlayerInput.latchHold) or !wallLatchingModifer):
 		latched = true
 	else:
 		latched = false
 		wasLatched = true
 		_setLatch(0.2, false)
 
-	if rightHold and !latched:
+	if $PlayerInput.rightHold and !latched:
 		anim.scale.x = animScaleLock.x
-	if leftHold and !latched:
+	if $PlayerInput.leftHold and !latched:
 		anim.scale.x = animScaleLock.x * -1
 	
 	#run
@@ -349,78 +367,43 @@ func _process(_delta):
 				anim.speed_scale = 1
 				anim.play("crouch_idle")
 		
-		if rollTap and canRoll and roll:
+		if $PlayerInput.rollTap and canRoll and roll:
 			anim.speed_scale = 1
 			anim.play("roll")
 		
-@rpc("call_local")
-func shoot(shooter_pid):
-	var bullet = BULLET.instantiate()
+@rpc("any_peer", "call_local")
+func shoot(shooter_pid, muzzle_transform):	
+	var bullet = Globals.BULLET.instantiate()
+	print("Bullet instantiated: ", bullet)
 	bullet.set_multiplayer_authority(shooter_pid)
-	get_parent().add_child(bullet)
-	bullet.transform = $GunContainer/GunSprite/Muzzle.global_transform
+	print("Bullet authority set to: ", shooter_pid)
+	Globals.game.level.add_child(bullet)
+	bullet.global_transform = muzzle_transform
 
 @rpc("any_peer", "call_local")
 func take_damage(amount: int):
 	health -= amount	
 	if health <= 0:
-		game.player_death(player_id)
+		game.player_death(int(name))
 		health = get_max_health()
 		
-func move_to_spawnpoint():
+func move_to_spawnpoint(delta):
 	global_position = game.get_random_spawnpoint()
-		
-#@rpc("any_peer", "call_local")	
-#func spawn_cards():
-#	print("game.currentWinner: ",game.currentWinner.player_name)
-#	print("player_name: ",player_name)
-#	if game.currentWinner.player_name != player_name:
-#		pass
-#	for count in game.selection_options:		
-#		var card = game.upgrade_cards.pick_random()
-#		if card != null:
-			#print("card: ", card.name)
-#			var new_card = card.instantiate()
-#			active_card_selector.add_child(new_card)
-#		else:
-#			print("card is null")
 
 func _physics_process(delta):
-	if !is_multiplayer_authority():
+	if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
 		return
-	
-	#if card_selector.visible == true:
-	#	return
-	if !dset:
-		gdelta = delta
-		dset = true
-	#INFO Input Detectio. Define your inputs from the project settings here.
-	leftHold = Input.is_action_pressed("left")
-	rightHold = Input.is_action_pressed("right")
-	upHold = Input.is_action_pressed("up")
-	downHold = Input.is_action_pressed("down")
-	leftTap = Input.is_action_just_pressed("left")
-	rightTap = Input.is_action_just_pressed("right")
-	leftRelease = Input.is_action_just_released("left")
-	rightRelease = Input.is_action_just_released("right")
-	jumpTap = Input.is_action_just_pressed("jump")
-	jumpRelease = Input.is_action_just_released("jump")
-	runHold = Input.is_action_pressed("run")
-	latchHold = Input.is_action_pressed("latch")
-	dashTap = Input.is_action_just_pressed("dash")
-	rollTap = Input.is_action_just_pressed("roll")
-	downTap = Input.is_action_just_pressed("down")
-	twirlTap = Input.is_action_just_pressed("twirl")
 	process_input()
+	
 	
 	#INFO Left and Right Movement
 	
-	if rightHold and leftHold and movementInputMonitoring:
+	if $PlayerInput.rightHold and $PlayerInput.leftHold and movementInputMonitoring:
 		if !instantStop:
 			_decelerate(delta, false)
 		else:
 			velocity.x = -0.1
-	elif rightHold and movementInputMonitoring.x:
+	elif $PlayerInput.rightHold and movementInputMonitoring.x:
 		if velocity.x > maxSpeed or instantAccel:
 			velocity.x = maxSpeed
 		else:
@@ -430,7 +413,7 @@ func _physics_process(delta):
 				_decelerate(delta, false)
 			else:
 				velocity.x = -0.1
-	elif leftHold and movementInputMonitoring.y:
+	elif $PlayerInput.leftHold and movementInputMonitoring.y:
 		if velocity.x < -maxSpeed or instantAccel:
 			velocity.x = -maxSpeed
 		else:
@@ -446,17 +429,17 @@ func _physics_process(delta):
 	elif velocity.x < 0:
 		wasMovingR = false
 		
-	if rightTap:
+	if $PlayerInput.rightTap:
 		wasPressingR = true
-	if leftTap:
+	if $PlayerInput.leftTap:
 		wasPressingR = false
 	
-	if runningModifier and !runHold:
+	if runningModifier and !$PlayerInput.runHold:
 		maxSpeed = maxSpeedLock / 2
 	elif is_on_floor(): 
 		maxSpeed = maxSpeedLock
 	
-	if !(leftHold or rightHold):
+	if !($PlayerInput.leftHold or $PlayerInput.rightHold):
 		if !instantStop:
 			_decelerate(delta, false)
 		else:
@@ -464,33 +447,35 @@ func _physics_process(delta):
 			
 	#INFO Crouching
 	if crouch:
-		if downHold and is_on_floor():
+		if $PlayerInput.downHold and is_on_floor():
 			crouching = true
-		elif !downHold and ((runHold and runningModifier) or !runningModifier) and !rolling:
+		elif !$PlayerInput.downHold and (($PlayerInput.upHold and runningModifier) or !runningModifier) and !rolling:
 			crouching = false
 			
 	if !is_on_floor():
 		crouching = false
-			
+		
+	
 	if crouching:
 		maxSpeed = maxSpeedLock / 2
 		col.scale.y = colliderScaleLockY / 2
 		col.position.y = colliderPosLockY + (8 * colliderScaleLockY)
 	else:
-		maxSpeed = maxSpeedLock
+		maxSpeed = maxSpeedLock		
+		col = PlayerCollider
 		col.scale.y = colliderScaleLockY
 		col.position.y = colliderPosLockY
 		
 	#INFO Rolling
-	if canRoll and is_on_floor() and rollTap and crouching:
+	if canRoll and is_on_floor() and $PlayerInput.rollTap and crouching:
 		_rollingTime(0.75)
-		if wasPressingR and !(upHold):
+		if wasPressingR and !($PlayerInput.upHold):
 			velocity.y = 0
 			velocity.x = maxSpeedLock * rollLength
 			dashCount += -1
 			movementInputMonitoring = Vector2(false, false)
 			_inputPauseReset(rollLength * 0.0625)
-		elif !(upHold):
+		elif !($PlayerInput.upHold):
 			velocity.y = 0
 			velocity.x = -maxSpeedLock * rollLength
 			dashCount += -1
@@ -509,7 +494,7 @@ func _physics_process(delta):
 	
 	if is_on_wall() and !groundPounding:
 		appliedTerminalVelocity = terminalVelocity / wallSliding
-		if wallLatching and ((wallLatchingModifer and latchHold) or !wallLatchingModifer):
+		if wallLatching and ((wallLatchingModifer and $PlayerInput.latchHold) or !wallLatchingModifer):
 			appliedGravity = 0
 			
 			if velocity.y < 0:
@@ -517,7 +502,7 @@ func _physics_process(delta):
 			if velocity.y > 0:
 				velocity.y = 0
 				
-			if wallLatchingModifer and latchHold and movementInputMonitoring == Vector2(true, true):
+			if wallLatchingModifer and $PlayerInput.latchHold and movementInputMonitoring == Vector2(true, true):
 				velocity.x = 0
 			
 		elif wallSliding != 1 and velocity.y > 0:
@@ -531,7 +516,7 @@ func _physics_process(delta):
 		elif velocity.y > appliedTerminalVelocity:
 				velocity.y = appliedTerminalVelocity
 		
-	if shortHopAkaVariableJumpHeight and jumpRelease and velocity.y < 0:
+	if shortHopAkaVariableJumpHeight and $PlayerInput.jumpRelease and velocity.y < 0:
 		velocity.y = velocity.y / 2
 	
 	if jumps == 1:
@@ -540,7 +525,7 @@ func _physics_process(delta):
 				coyoteActive = true
 				_coyoteTime()
 				
-		if jumpTap and !is_on_wall():
+		if $PlayerInput.jumpTap and !is_on_wall():
 			if coyoteActive:
 				coyoteActive = false
 				_jump()
@@ -549,12 +534,12 @@ func _physics_process(delta):
 				_bufferJump()
 			elif jumpBuffering == 0 and coyoteTime == 0 and is_on_floor():
 				_jump()	
-		elif jumpTap and is_on_wall() and !is_on_floor():
+		elif $PlayerInput.jumpTap and is_on_wall() and !is_on_floor():
 			if wallJump and !latched:
 				_wallJump()
 			elif wallJump and latched:
 				_wallJump()
-		elif jumpTap and is_on_floor():
+		elif $PlayerInput.jumpTap and is_on_floor():
 			_jump()
 		
 		
@@ -568,19 +553,19 @@ func _physics_process(delta):
 	elif jumps > 1:
 		if is_on_floor():
 			jumpCount = jumps
-		if jumpTap and jumpCount > 0 and !is_on_wall():
+		if $PlayerInput.jumpTap and jumpCount > 0 and !is_on_wall():
 			velocity.y = -jumpMagnitude
 			jumpCount = jumpCount - 1
 			_endGroundPound()
-		elif jumpTap and is_on_wall() and wallJump:
+		elif $PlayerInput.jumpTap and is_on_wall() and wallJump:
 			_wallJump()
 			
 			
 	#INFO dashing
 	if is_on_floor():
 		dashCount = dashes
-	if eightWayDash and dashTap and dashCount > 0 and !rolling:
-		var input_direction = Input.get_vector("left", "right", "up", "down")
+	if eightWayDash and $PlayerInput.dashTap and dashCount > 0 and !rolling:
+		input_direction = Input.get_vector("left", "right", "up", "down")
 		var dTime = 0.0625 * dashLength
 		_dashingTime(dTime)
 		_pauseGravity(dTime)
@@ -589,11 +574,11 @@ func _physics_process(delta):
 		movementInputMonitoring = Vector2(false, false)
 		_inputPauseReset(dTime)
 	
-	if twoWayDashVertical and dashTap and dashCount > 0 and !rolling:
+	if twoWayDashVertical and $PlayerInput.dashTap and dashCount > 0 and !rolling:
 		var dTime = 0.0625 * dashLength
-		if upHold and downHold:
+		if $PlayerInput.upHold and $PlayerInput.downHold:
 			_placeHolder()
-		elif upHold:
+		elif $PlayerInput.upHold:
 			_dashingTime(dTime)
 			_pauseGravity(dTime)
 			velocity.x = 0
@@ -601,7 +586,7 @@ func _physics_process(delta):
 			dashCount += -1
 			movementInputMonitoring = Vector2(false, false)
 			_inputPauseReset(dTime)
-		elif downHold and dashCount > 0:
+		elif $PlayerInput.downHold and dashCount > 0:
 			_dashingTime(dTime)
 			_pauseGravity(dTime)
 			velocity.x = 0
@@ -610,9 +595,9 @@ func _physics_process(delta):
 			movementInputMonitoring = Vector2(false, false)
 			_inputPauseReset(dTime)
 	
-	if twoWayDashHorizontal and dashTap and dashCount > 0 and !rolling:
+	if twoWayDashHorizontal and $PlayerInput.dashTap and dashCount > 0 and !rolling:
 		var dTime = 0.0625 * dashLength
-		if wasPressingR and !(upHold or downHold):
+		if $PlayerInput.wasPressingR and !($PlayerInput.upHold or $PlayerInput.downHold):
 			velocity.y = 0
 			velocity.x = dashMagnitude
 			_pauseGravity(dTime)
@@ -620,7 +605,7 @@ func _physics_process(delta):
 			dashCount += -1
 			movementInputMonitoring = Vector2(false, false)
 			_inputPauseReset(dTime)
-		elif !(upHold or downHold):
+		elif !($PlayerInput.upHold or $PlayerInput.downHold):
 			velocity.y = 0
 			velocity.x = -dashMagnitude
 			_pauseGravity(dTime)
@@ -629,9 +614,9 @@ func _physics_process(delta):
 			movementInputMonitoring = Vector2(false, false)
 			_inputPauseReset(dTime)
 			
-	if dashing and velocity.x > 0 and leftTap and dashCancel:
+	if dashing and velocity.x > 0 and $PlayerInput.leftTap and dashCancel:
 		velocity.x = 0
-	if dashing and velocity.x < 0 and rightTap and dashCancel:
+	if dashing and velocity.x < 0 and $PlayerInput.rightTap and dashCancel:
 		velocity.x = 0
 	
 	#INFO Corner Cutting
@@ -642,7 +627,7 @@ func _physics_process(delta):
 			position.x -= correctionAmount
 			
 	#INFO Ground Pound
-	if groundPound and downTap and !is_on_floor() and !is_on_wall():
+	if groundPound and $PlayerInput.downTap and !is_on_floor() and !is_on_wall():
 		groundPounding = true
 		gravityActive = false
 		velocity.y = 0
@@ -652,7 +637,7 @@ func _physics_process(delta):
 		_endGroundPound()
 	move_and_slide()
 	
-	if upToCancel and upHold and groundPound:
+	if upToCancel and $PlayerInput.upHold and groundPound:
 		_endGroundPound()
 	
 func _bufferJump():
@@ -676,7 +661,7 @@ func _wallJump():
 	var verticalWallKick = abs(jumpMagnitude * sin(wallKickAngle * (PI / 180)))
 	velocity.y = -verticalWallKick
 	var dir = 1
-	if wallLatchingModifer and latchHold:
+	if wallLatchingModifer and $PlayerInput.latchHold:
 		dir = -1
 	if wasMovingR:
 		velocity.x = -horizontalWallKick  * dir

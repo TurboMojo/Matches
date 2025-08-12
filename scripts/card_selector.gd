@@ -21,5 +21,5 @@ func despawn_cards():
 	for n in hand.get_children():
 		hand.remove_child(n)
 		n.queue_free()
-	for player in game.dead_players:	
-		rpc_id(1, "game.respawn", player)
+	for dead_player in game.dead_players:	
+		rpc_id(1, "game.respawn", dead_player)

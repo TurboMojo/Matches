@@ -4,6 +4,7 @@ extends Node
 @onready var multiplayer_ui = $UI/Multiplayer
 
 const PLAYER = preload("res://player/platformer_player.tscn")
+@export var level : Node2D
 #const PLAYER = preload("res://player/player.tscn")
 var peer = ENetMultiplayerPeer.new()
 @export var players: Array[PlatformerController2D] = []
@@ -28,6 +29,7 @@ var next_player_name = "Player 1"
 
 func _ready():
 	graveyard = get_node("/root/Game/Graveyard")
+	level = get_node("/root/Game/Level")
 	$MultiplayerSpawner.spawn_function = add_player
 	_player_spawn_points = $/root/Game/Level
 	_players_spawn_node = $/root/Game
@@ -42,7 +44,6 @@ func _on_host_pressed():
 	
 	peer.create_server(25565)
 	multiplayer.multiplayer_peer = peer
-	
 	multiplayer.peer_connected.connect(
 		func(pid):
 			print("Peer " + str(pid) + " has joined the game!")
@@ -52,22 +53,21 @@ func _on_host_pressed():
 	$MultiplayerSpawner.spawn(multiplayer.get_unique_id())
 	multiplayer_ui.hide()
 
-func _on_join_pressed():
-	next_player_name = "Player" + str(multiplayer.get_peers().size())
+func _on_join_pressed():	
 	peer.create_client("localhost", 25565)
 	multiplayer.multiplayer_peer = peer
 	multiplayer_ui.hide()
 
 func add_player(pid):
-	var player = PLAYER.instantiate()	
-	player.set_multiplayer_authority(pid)
+	next_player_name = "Player" + str(multiplayer.get_peers().size() + 1)
+	var player = PLAYER.instantiate()
 	player.name = str(pid)
-	player.player_name = str(pid)
-	player.player_id =  pid
+	#player.player_id =  pid
 	next_player_name = ""
 	player.global_position = $Level.get_child(players.size()).global_position
 	players.append(player)
 	Globals.player = player
+	#level.add_child(player)
 	print(str(players.size())+" players")
 	
 	if multiplayer.get_peers().size() > 0:	
@@ -77,12 +77,22 @@ func add_player(pid):
 	return player
 
 func get_random_spawnpoint():
-	return $Level.get_children().pick_random().global_position
+	var children = get_children()[0].get_children()
+	var filtered_children : Array[Node2D]
+	for c in children:
+		print("iterating ",c.name)
+		if(c.name.begins_with("SpawnPoint")):
+			filtered_children.append(c)
+	var spawn_point = filtered_children.pick_random().global_position
+	print("spawning at ",spawn_point)
+	return spawn_point
 
 @export var isCardSelection = false
 
 @rpc("call_local", "any_peer")
-func spawn_cards(winner: int):		
+func spawn_cards(winner: int):	
+	print("spawn_cards. remove the return statement after me.")
+	return
 	var winnerObject = get_body_from_id(winner)
 	if winnerObject == null:
 		print("winner is null")
@@ -91,6 +101,7 @@ func spawn_cards(winner: int):
 		return
 	
 	card_hand = get_node("/root/Game/UI/CardSelector")
+	
 	isCardSelection = true
 	if winnerObject == null:
 		print("winner is null")
@@ -99,6 +110,7 @@ func spawn_cards(winner: int):
 		var card = upgrade_cards.pick_random()
 		if card != null:
 			var new_card = card.instantiate()
+			print("new card name: ",new_card.name)
 			if card_hand == null:
 				print ("card_hand is null")
 				return
@@ -111,6 +123,13 @@ func respawn(player_id: int):
 	print("respawning ",get_body_from_id(player_id).player_name)
 	var body = get_body_from_id(player_id)
 	body.global_position = get_random_spawnpoint()
+	
+@rpc("any_peer", "call_local")
+func respawn_all():
+	for p in players:
+		print("respawning ",p.player_name)
+		p.health = p.MAX_HEALTH
+		p.global_position = get_random_spawnpoint()
 		
 #@rpc("any_peer", "call_local")
 #func take_damage(player_id: int, amount: int):
@@ -140,16 +159,16 @@ func player_death(dead_player_id: int):
 		if not dead_players.has(get_id_from_body(player)):
 			last_living_player = player
 	
-	if last_living_player != null:
+	#if last_living_player != null:
 		# I'm not sure why this is in an if block, but I don't feel like finding out right now.
 		# TODO: test and see if this if statement is needed and remove it if not.
-		roundWinners.append(last_living_player.player_id)
-		var victory_count = roundWinners.count(last_living_player.player_id)
-		currentWinner = last_living_player.player_id		
-		print("Winner is "+last_living_player.player_name)
-		#dead_players.clear()
-		if victory_count % 2 == 0:
-			rpc_id(currentWinner,"spawn_cards", currentWinner)
-			get_body_from_id(dead_player_id).global_position = graveyard.global_position
-		else:
-			get_body_from_id(dead_player_id).global_position = get_random_spawnpoint()
+	roundWinners.append(last_living_player.player_id)
+	var victory_count = roundWinners.count(last_living_player.player_id)
+	currentWinner = last_living_player.player_id		
+	print("Winner is "+last_living_player.player_name)
+	#dead_players.clear()
+	if victory_count % 2 == 0:
+		rpc_id(currentWinner,"spawn_cards", currentWinner)
+		get_body_from_id(dead_player_id).global_position = graveyard.global_position
+	else:
+		get_body_from_id(dead_player_id).global_position = get_random_spawnpoint()

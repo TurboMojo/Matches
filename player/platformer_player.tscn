@@ -1,7 +1,8 @@
-[gd_scene load_steps=7 format=3 uid="uid://ckfdwsfyhadii"]
+[gd_scene load_steps=9 format=3 uid="uid://ckfdwsfyhadii"]
 
 [ext_resource type="Script" uid="uid://cuyajdt4fxr8s" path="res://UltimatePlatformerController.gd" id="1_0vsdo"]
 [ext_resource type="Texture2D" uid="uid://by2qvlirfs6xr" path="res://player/player.png" id="2_7cfh1"]
+[ext_resource type="Script" uid="uid://bkw7j0j5i6kh6" path="res://scripts/player_input.gd" id="3_7cfh1"]
 [ext_resource type="Texture2D" uid="uid://dsbqfqmi6bnaf" path="res://player/gun.png" id="3_df2gm"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ive5f"]
@@ -31,30 +32,81 @@ properties/2/replication_mode = 2
 properties/3/path = NodePath(".:health")
 properties/3/spawn = true
 properties/3/replication_mode = 2
-properties/4/path = NodePath(".:player_id")
+properties/4/path = NodePath(".:player_name")
 properties/4/spawn = true
 properties/4/replication_mode = 2
-properties/5/path = NodePath(".:player_name")
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_0vsdo"]
+properties/0/path = NodePath("PlayerInput:upHold")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("PlayerInput:downHold")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath("PlayerInput:leftHold")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath("PlayerInput:leftTap")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath("PlayerInput:leftRelease")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+properties/5/path = NodePath("PlayerInput:rightHold")
 properties/5/spawn = true
-properties/5/replication_mode = 2
+properties/5/replication_mode = 1
+properties/6/path = NodePath("PlayerInput:rightTap")
+properties/6/spawn = true
+properties/6/replication_mode = 1
+properties/7/path = NodePath("PlayerInput:rightRelease")
+properties/7/spawn = true
+properties/7/replication_mode = 1
+properties/8/path = NodePath("PlayerInput:jumpTap")
+properties/8/spawn = true
+properties/8/replication_mode = 1
+properties/9/path = NodePath("PlayerInput:jumpRelease")
+properties/9/spawn = true
+properties/9/replication_mode = 1
+properties/10/path = NodePath("PlayerInput:runHold")
+properties/10/spawn = true
+properties/10/replication_mode = 1
+properties/11/path = NodePath("PlayerInput:latchHold")
+properties/11/spawn = true
+properties/11/replication_mode = 1
+properties/12/path = NodePath("PlayerInput:dashTap")
+properties/12/spawn = true
+properties/12/replication_mode = 1
+properties/13/path = NodePath("PlayerInput:rollTap")
+properties/13/spawn = true
+properties/13/replication_mode = 1
+properties/14/path = NodePath("PlayerInput:downTap")
+properties/14/spawn = true
+properties/14/replication_mode = 1
+properties/15/path = NodePath("PlayerInput:twirlTap")
+properties/15/spawn = true
+properties/15/replication_mode = 1
 
 [node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("PlayerSprite", "PlayerCollider", "leftRaycast", "middleRaycast", "rightRaycast")]
 collision_layer = 2
 script = ExtResource("1_0vsdo")
-PlayerSprite = NodePath("Sprite2D")
-PlayerCollider = NodePath("CollisionShape2D")
+PlayerSprite = NodePath("PlayerSprite")
+PlayerCollider = NodePath("PlayerCollider")
 leftRaycast = NodePath("LeftRaycast")
 middleRaycast = NodePath("MiddleRaycast")
 rightRaycast = NodePath("RightRaycast")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+[node name="PlayerCollider" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_ive5f")
 
-[node name="Sprite2D" type="AnimatedSprite2D" parent="."]
+[node name="PlayerSprite" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_7cfh1")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_si0n2")
+
+[node name="PlayerInput" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_0vsdo")
+script = ExtResource("3_7cfh1")
 
 [node name="GunContainer" type="Node2D" parent="."]
 

@@ -53,7 +53,9 @@ func ApplyUpgrade():
 
 @rpc("call_local")
 func request_apply_upgrade():	
-	Globals.game.card_hand.despawn_cards()
+	if multiplayer.get_remote_sender_id() == multiplayer.get_unique_id():
+		Globals.game.card_hand.despawn_cards()
+	
 	Globals.player.jumpHeight = jumpHeightMultiplier * Globals.player.jumpHeight
 	Globals.player.jumps = jumps
 	Globals.player.gravityScale = gravityScaleMultiplier * Globals.player.gravityScale
@@ -80,7 +82,7 @@ func request_apply_upgrade():
 	Globals.player.groundPound = groundPound
 	Globals.player.groundPoundPause = groundPoundPause
 	Globals.player.upToCancel = upToCancel
-	
+	Globals.game.respawn_all()
 	
 
 

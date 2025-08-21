@@ -6,22 +6,26 @@ var velocity = 0.0
 @export var bullet_scene : PackedScene
 var id : int
 
-#func _physics_process(_delta: float) -> void:
-#	if !is_multiplayer_authority():
-#		return
-#	look_at(get_global_mouse_position())	
+func _process(delta: float) -> void:
+	if Globals.is_network_authority():
+		update_gun()
 
-#func _input(event):
-#	if event.is_action_pressed("shoot") and is_multiplayer_authority() and Globals.game.isCardSelection == false:
-#		spawn_bullet.rpc(multiplayer.get_unique_id(), SPEED)
+	
+func _input(event: InputEvent) -> void:
+	if Globals.is_network_authority() and event is InputEventMouseMotion:
+		rpc("sync_gun_position", get_global_mouse_position())
 
-#@rpc("call_local")
-#func spawn_bullet(shooter_id: int, speed: float) -> void:	
-#	print("you shouldn't see me")
-#	var origin = global_position
-#	var direction = global_rotation
-#	var bullet = bullet_scene.instantiate()	
-#	bullet.speed = speed
-#	bullet.name = "Bullet" + str(Globals.game.bullets_fired)
-#	Globals.game._players_spawn_node.add_child(bullet, true)
-#	bullet.transform = global_transform
+func update_gun():
+	var mouse_position = get_global_mouse_position()
+	look_at(mouse_position)
+	
+	# Flip the gun sprite based on mouse position
+	if mouse_position.x < global_position.x:
+		$GunSprite.flip_h = true
+	else:
+		$GunSprite.flip_h = false
+
+# RPC function to synchronize gun state
+@rpc
+func sync_gun_position(mouse_position: Vector2):
+	look_at(mouse_position)

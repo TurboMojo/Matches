@@ -97,7 +97,7 @@ text = "Join"
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("uid://ckfdwsfyhadii", "uid://daelk2mg0nk5a")
-spawn_path = NodePath("..")
+spawn_path = NodePath("../Level")
 
 [node name="Graveyard" type="Node2D" parent="."]
 position = Vector2(-108, 13)

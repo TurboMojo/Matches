@@ -161,8 +161,6 @@ var anim
 var col
 var animScaleLock : Vector2
 
-
-
 @export_category("Custom")
 
 const MAX_HEALTH = 100
@@ -170,55 +168,69 @@ const MAX_HEALTH = 100
 
 @onready var game: Game = get_node("/root/Game")
 @onready var active_card_selector: card_selector = get_node("/root/Game/UI/CardSelector")
+@onready var bullet_spawner : MultiplayerSpawner = get_node("GunContainer/GunSprite/Muzzle/BulletSpawner")
 @export var player_name = ""
 #@export var player_id: int
 @export var input_direction: Vector2
 @export var shooting : bool = false
-
+@onready var state : State = $State
 var hasFocus
+@onready var gun_container = $GunContainer
 
 func _enter_tree():	
 	set_multiplayer_authority(int(name))
-	$MultiplayerSynchronizer.set_multiplayer_authority(int(name))
+	$State/MultiplayerSynchronizer.set_multiplayer_authority(int(name))
+	bullet_spawner = get_node("GunContainer/GunSprite/Muzzle/BulletSpawner")
+	bullet_spawner.set_multiplayer_authority(int(name))
+	bullet_spawner.spawn_function = shoot
+	
 	$PlayerInput.set_multiplayer_authority(int(name))
+	if get_multiplayer_authority() != multiplayer.get_unique_id():
+		set_process_input(false)
+		print("setting process input to false")
 	
 func _ready():	
 	#if not is_multiplayer_authority(): return
 	wasMovingR = true
 	anim = PlayerSprite
 	col = PlayerCollider
+	bullet_spawner.spawn_path = Globals.LEVEL.get_path()
 	get_viewport().focus_entered.connect(_on_window_focus_in) 
 	get_viewport().focus_exited.connect(_on_window_focus_out)
 	_updateData()
+
 
 func get_max_health():
 	return MAX_HEALTH
 
 func process_input():	
-	#if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
-	#	return	
-	
-
+	if get_multiplayer_authority() != int(name):
+		return	
 	if Input.is_action_just_released("shoot"):
 		shooting = false
 	if Input.is_action_just_pressed("shoot") && game.isCardSelection == false:
 		shooting = true
 
-		if int(name) == multiplayer.get_unique_id():
-			shoot(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
-		else:
-			shoot.rpc(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
-			
-	if int(name) == multiplayer.get_unique_id():		
-		$GunContainer.look_at(get_global_mouse_position())	
+	if shooting == true:
+		shooting = false
+		bullet_spawner.spawn(int(name))
+		
+		#shoot.rpc_id(1,get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
+		#if int(name) == get_multiplayer_authority():
+			#print("Bullet fired by ", name)
+			#shoot(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
+		#else:
+		#	shoot.rpc(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
+	# Only do this for the authoritative client
+	if int(name) == get_multiplayer_authority():
+		
+		gun_container.look_at(get_global_mouse_position())	
 		if get_global_mouse_position().x < global_position.x:
 			$GunContainer/GunSprite.flip_v = true
 		else:
 			$GunContainer/GunSprite.flip_v = false
 	else:
 		print("stop doing that!")
-
-
 
 func _on_window_focus_in(): hasFocus = true
 
@@ -290,8 +302,6 @@ func _updateData():
 		twoWayDashVertical = true
 	elif dashType == 4:
 		eightWayDash = true
-	
-	
 
 func _process(_delta):
 	#if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
@@ -370,15 +380,22 @@ func _process(_delta):
 		if $PlayerInput.rollTap and canRoll and roll:
 			anim.speed_scale = 1
 			anim.play("roll")
-		
-@rpc("any_peer", "call_local")
-func shoot(shooter_pid, muzzle_transform):	
-	var bullet = Globals.BULLET.instantiate()
-	print("Bullet instantiated: ", bullet)
-	bullet.set_multiplayer_authority(shooter_pid)
-	print("Bullet authority set to: ", shooter_pid)
-	Globals.game.level.add_child(bullet)
-	bullet.global_transform = muzzle_transform
+
+#@rpc("any_peer", "call_local", "reliable")
+#func shoot(shooter_pid, muzzle_transform):	
+func shoot(id: int) -> Node:
+	var bullet = Globals.BULLET.instantiate()	
+	print("bullet: ",type_string(typeof(bullet)))
+	bullet.pid = id
+	#Globals.game.level.add_child(bullet, true)	
+	var target_position = $GunContainer/GunSprite/Muzzle.global_position
+	var target_rotation = $GunContainer/GunSprite/Muzzle.global_rotation
+	#bullet.position = $GunContainer/GunSprite/Muzzle.position
+	#bullet.reparent(Globals.LEVEL)
+	#Globals.LEVEL.add_child(bullet)
+	bullet.global_position = target_position
+	bullet.global_rotation = target_rotation
+	return bullet
 
 @rpc("any_peer", "call_local")
 func take_damage(amount: int):
@@ -390,8 +407,12 @@ func take_damage(amount: int):
 func move_to_spawnpoint(delta):
 	global_position = game.get_random_spawnpoint()
 
+
+
 func _physics_process(delta):
-	if $PlayerInput.get_multiplayer_authority() != multiplayer.get_unique_id():
+	if get_multiplayer_authority() != multiplayer.get_unique_id():
+		global_position = $State.sync_position
+		global_rotation = $State.sync_rotation
 		return
 	process_input()
 	
@@ -639,6 +660,9 @@ func _physics_process(delta):
 	
 	if upToCancel and $PlayerInput.upHold and groundPound:
 		_endGroundPound()
+		
+	state.sync_position = global_position
+	state.sync_rotation = global_rotation
 	
 func _bufferJump():
 	await get_tree().create_timer(jumpBuffering).timeout

@@ -18,14 +18,14 @@ properties/1/replication_mode = 1
 collision_mask = 3
 script = ExtResource("1_up1ql")
 
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_c5bun")
+
 [node name="Sprite2D" type="Sprite2D" parent="."]
 modulate = Color(1, 1, 0.333333, 1)
 texture = ExtResource("1_0jxng")
 region_enabled = true
 region_rect = Rect2(0, 0, 1, 1)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_c5bun")
 
 [node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_6wip1")

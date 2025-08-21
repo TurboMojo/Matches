@@ -1,9 +1,11 @@
-[gd_scene load_steps=9 format=3 uid="uid://ckfdwsfyhadii"]
+[gd_scene load_steps=11 format=3 uid="uid://ckfdwsfyhadii"]
 
 [ext_resource type="Script" uid="uid://cuyajdt4fxr8s" path="res://UltimatePlatformerController.gd" id="1_0vsdo"]
 [ext_resource type="Texture2D" uid="uid://by2qvlirfs6xr" path="res://player/player.png" id="2_7cfh1"]
 [ext_resource type="Script" uid="uid://bkw7j0j5i6kh6" path="res://scripts/player_input.gd" id="3_7cfh1"]
 [ext_resource type="Texture2D" uid="uid://dsbqfqmi6bnaf" path="res://player/gun.png" id="3_df2gm"]
+[ext_resource type="Script" uid="uid://bkisiel826kqs" path="res://scripts/State.gd" id="5_df2gm"]
+[ext_resource type="Texture2D" uid="uid://caetxtntab8sm" path="res://icon.svg" id="5_ihwgy"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ive5f"]
 size = Vector2(8, 8)
@@ -18,23 +20,6 @@ animations = [{
 "name": &"default",
 "speed": 5.0
 }]
-
-[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_si0n2"]
-properties/0/path = NodePath(".:position")
-properties/0/spawn = true
-properties/0/replication_mode = 1
-properties/1/path = NodePath("GunContainer:rotation")
-properties/1/spawn = true
-properties/1/replication_mode = 1
-properties/2/path = NodePath("GunContainer/GunSprite:flip_v")
-properties/2/spawn = true
-properties/2/replication_mode = 2
-properties/3/path = NodePath(".:health")
-properties/3/spawn = true
-properties/3/replication_mode = 2
-properties/4/path = NodePath(".:player_name")
-properties/4/spawn = true
-properties/4/replication_mode = 2
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_0vsdo"]
 properties/0/path = NodePath("PlayerInput:upHold")
@@ -86,6 +71,29 @@ properties/15/path = NodePath("PlayerInput:twirlTap")
 properties/15/spawn = true
 properties/15/replication_mode = 1
 
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_si0n2"]
+properties/0/path = NodePath("GunContainer:rotation")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath("GunContainer/GunSprite:flip_v")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:health")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+properties/3/path = NodePath(".:player_name")
+properties/3/spawn = true
+properties/3/replication_mode = 1
+properties/4/path = NodePath("State:sync_position")
+properties/4/spawn = true
+properties/4/replication_mode = 1
+properties/5/path = NodePath("State:sync_rotation")
+properties/5/spawn = true
+properties/5/replication_mode = 1
+properties/6/path = NodePath("GunContainer/GunSprite/Muzzle:position")
+properties/6/spawn = true
+properties/6/replication_mode = 1
+
 [node name="Player" type="CharacterBody2D" node_paths=PackedStringArray("PlayerSprite", "PlayerCollider", "leftRaycast", "middleRaycast", "rightRaycast")]
 collision_layer = 2
 script = ExtResource("1_0vsdo")
@@ -101,9 +109,6 @@ shape = SubResource("RectangleShape2D_ive5f")
 [node name="PlayerSprite" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_7cfh1")
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
-replication_config = SubResource("SceneReplicationConfig_si0n2")
-
 [node name="PlayerInput" type="MultiplayerSynchronizer" parent="."]
 replication_config = SubResource("SceneReplicationConfig_0vsdo")
 script = ExtResource("3_7cfh1")
@@ -117,6 +122,13 @@ texture = ExtResource("3_df2gm")
 [node name="Muzzle" type="Marker2D" parent="GunContainer/GunSprite"]
 position = Vector2(3, 0)
 
+[node name="Sprite2D" type="Sprite2D" parent="GunContainer/GunSprite/Muzzle"]
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("5_ihwgy")
+
+[node name="BulletSpawner" type="MultiplayerSpawner" parent="GunContainer/GunSprite/Muzzle"]
+spawn_path = NodePath("..")
+
 [node name="LeftRaycast" type="RayCast2D" parent="."]
 position = Vector2(-10, 0)
 target_position = Vector2(1, -112)
@@ -127,3 +139,11 @@ target_position = Vector2(1, -112)
 [node name="RightRaycast" type="RayCast2D" parent="."]
 position = Vector2(10, 0)
 target_position = Vector2(1, -112)
+
+[node name="State" type="Node" parent="."]
+script = ExtResource("5_df2gm")
+metadata/_custom_type_script = "uid://bkisiel826kqs"
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="State"]
+root_path = NodePath("../..")
+replication_config = SubResource("SceneReplicationConfig_si0n2")

@@ -12,7 +12,7 @@ var peer = ENetMultiplayerPeer.new()
 #var players: Array[Player] = []
 var _players_spawn_node
 var _player_spawn_points
-var bullet_scene = preload("res://scenes/bullet.tscn")
+
 #var card_selector
 @onready var card_hand = get_node("/root/Game/UI/CardSelector")
 var bullets = {}
@@ -59,15 +59,15 @@ func _on_join_pressed():
 	multiplayer_ui.hide()
 
 func add_player(pid):
+	print("add_player: ",str(pid))
 	next_player_name = "Player" + str(multiplayer.get_peers().size() + 1)
 	var player = PLAYER.instantiate()
+	player.set_multiplayer_authority(pid)
 	player.name = str(pid)
-	#player.player_id =  pid
 	next_player_name = ""
 	player.global_position = $Level.get_child(players.size()).global_position
 	players.append(player)
 	Globals.player = player
-	#level.add_child(player)
 	print(str(players.size())+" players")
 	
 	if multiplayer.get_peers().size() > 0:	

@@ -27,6 +27,10 @@ window/stretch/mode="viewport"
 
 project/assembly_name="Multiplayer Arena Shooter"
 
+[editor_plugins]
+
+enabled=PackedStringArray()
+
 [input]
 
 left={

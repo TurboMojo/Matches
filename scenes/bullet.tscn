@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3 uid="uid://b5i04061ybjkx"]
+
+[ext_resource type="Script" uid="uid://dgn4dv52w1kur" path="res://scripts/bullet.gd" id="1_l5glv"]
+[ext_resource type="Texture2D" uid="uid://bn2ec6tvom2sn" path="res://assets/sprites/bullet.png" id="2_eoqba"]
+[ext_resource type="Script" uid="uid://dour8fehaaugp" path="res://addons/netfox/tick-interpolator.gd" id="4_eoqba"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_l5glv"]
+
+[node name="Bullet" type="ShapeCast2D"]
+shape = SubResource("CircleShape2D_l5glv")
+script = ExtResource("1_l5glv")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_eoqba")
+
+[node name="TickInterpolator" type="Node" parent="." node_paths=PackedStringArray("root")]
+script = ExtResource("4_eoqba")
+root = NodePath("..")
+properties = Array[String]([":global_transform"])
+metadata/_custom_type_script = "uid://dour8fehaaugp"

@@ -181,7 +181,7 @@ func _enter_tree():
 	set_multiplayer_authority(int(name))
 	$State/MultiplayerSynchronizer.set_multiplayer_authority(int(name))
 	bullet_spawner = get_node("GunContainer/GunSprite/Muzzle/BulletSpawner")
-	bullet_spawner.set_multiplayer_authority(int(name))
+	#bullet_spawner.set_multiplayer_authority(int(name))
 	bullet_spawner.spawn_function = shoot
 	
 	$PlayerInput.set_multiplayer_authority(int(name))
@@ -190,7 +190,7 @@ func _enter_tree():
 		print("setting process input to false")
 	
 func _ready():	
-	#if not is_multiplayer_authority(): return
+	
 	wasMovingR = true
 	anim = PlayerSprite
 	col = PlayerCollider
@@ -213,6 +213,7 @@ func process_input():
 
 	if shooting == true:
 		shooting = false
+		print("shooting")
 		bullet_spawner.spawn(int(name))
 		
 		#shoot.rpc_id(1,get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
@@ -222,8 +223,8 @@ func process_input():
 		#else:
 		#	shoot.rpc(get_multiplayer_authority(), $GunContainer/GunSprite/Muzzle.global_transform)
 	# Only do this for the authoritative client
-	if int(name) == get_multiplayer_authority():
-		
+	
+	if int(name) == multiplayer.get_unique_id():		
 		gun_container.look_at(get_global_mouse_position())	
 		if get_global_mouse_position().x < global_position.x:
 			$GunContainer/GunSprite.flip_v = true

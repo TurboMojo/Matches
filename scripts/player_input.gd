@@ -31,8 +31,8 @@ func _process(delta):
 	pass
 
 func _physics_process(delta):
-	#if get_multiplayer_authority() != multiplayer.get_unique_id():
-	#	return
+	if get_multiplayer_authority() != multiplayer.get_unique_id():
+		return
 	#INFO Input Detectio. Define your inputs from the project settings here.
 	leftHold = Input.is_action_pressed("left")
 	rightHold = Input.is_action_pressed("right")

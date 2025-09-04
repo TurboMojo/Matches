@@ -3,9 +3,9 @@ class_name BrawlerWeapon
 
 @export var projectile: PackedScene
 @export var fire_cooldown: float = 0.15
-
-@onready var input: PlayerInput = $"../../Input"
-@onready var sound: AudioStreamPlayer3D = $AudioStreamPlayer3D
+@export var input : PlayerInput
+#@onready var input: PlayerInput = $"../../Input"
+@onready var sound: AudioStreamPlayer2D = $AudioStreamPlayer2D
 
 var last_fire: int = -1
 
@@ -13,7 +13,7 @@ static var _logger := _NetfoxLogger.new("fb", "BrawlerWeapon")
 @export var player_id := 1:
 	set(id):
 		player_id = id
-		input.set_multiplayer_authority(id)
+		
 		
 func _ready():
 	NetworkTime.on_tick.connect(_tick)

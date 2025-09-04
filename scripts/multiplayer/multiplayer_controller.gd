@@ -12,6 +12,7 @@ var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 
 var _respawning = false
 var alive = true
+var mouse_position
 
 @export var input: PlayerInput
 
@@ -27,7 +28,8 @@ func _ready():
 		$Camera2D.enabled = false
 	default_gun.player_id = player_id
 	rollback_synchronizer.process_settings()
-	
+	default_gun.input = input
+	NetworkTime.on_tick.connect(_tick)
 
 func _apply_animations(delta):
 	
@@ -48,13 +50,19 @@ func _apply_animations(delta):
 	else:
 		animated_sprite.play("jump")
 
+func _tick(_delta: float, _t: int):
+	pass
+	
+
 func _rollback_tick(delta, tick, is_fresh):
 	if not _respawning:
 		_apply_movement_from_input(delta)
+		default_gun.look_at(get_global_mouse_position())
 	else:
 		_respawning = false
 		position = MultiplayerManager.respawn_point
 		velocity = Vector2.ZERO
+		
 		$TickInterpolator.teleport()
 		
 		await get_tree().create_timer(0.5).timeout
@@ -104,5 +112,3 @@ func _respawn():
 	print("Respawned!")
 	$CollisionShape2D.set_deferred("disabled", false)
 	_respawning = true
-	
-	

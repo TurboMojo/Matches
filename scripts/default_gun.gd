@@ -6,7 +6,8 @@ class_name BrawlerWeapon
 @export var input : PlayerInput
 #@onready var input: PlayerInput = $"../../Input"
 @onready var sound: AudioStreamPlayer2D = $AudioStreamPlayer2D
-
+@onready var bullet_spawner = $MultiplayerSpawner
+@onready var spawn_path = "/root/Game/Players"
 var last_fire: int = -1
 
 static var _logger := _NetfoxLogger.new("fb", "BrawlerWeapon")
@@ -17,6 +18,7 @@ static var _logger := _NetfoxLogger.new("fb", "BrawlerWeapon")
 		
 func _ready():
 	NetworkTime.on_tick.connect(_tick)
+	#bullet_spawner.spawn_path = spawn_path
 
 func _can_fire() -> bool:
 	return NetworkTime.seconds_between(last_fire, NetworkTime.tick) >= fire_cooldown

@@ -451,7 +451,7 @@ grow_vertical = 2
 layout_mode = 2
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("uid://d226nufmlvivj")
+_spawnable_scenes = PackedStringArray("uid://d226nufmlvivj", "uid://b5i04061ybjkx")
 spawn_path = NodePath("../Players")
 spawn_limit = 10
 

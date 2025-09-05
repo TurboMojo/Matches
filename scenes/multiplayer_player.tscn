@@ -196,7 +196,7 @@ script = ExtResource("2_75sn2")
 [node name="RollbackSynchronizer" type="Node" parent="." node_paths=PackedStringArray("root")]
 script = ExtResource("3_qb0r7")
 root = NodePath("..")
-state_properties = Array[String]([":global_transform", ":velocity", "AnimatedSprite2D/DefaultGun:global_transform"])
+state_properties = Array[String]([":global_transform", ":velocity", "AnimatedSprite2D/DefaultGun:rotation"])
 input_properties = Array[String](["Input:input_direction", "Input:input_jump"])
 
 [node name="TickInterpolator" type="Node" parent="." node_paths=PackedStringArray("root")]

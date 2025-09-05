@@ -13,6 +13,7 @@ var gravity = ProjectSettings.get_setting("physics/2d/default_gravity")
 var _respawning = false
 var alive = true
 var mouse_position
+var gun_rotation : float
 
 @export var input: PlayerInput
 

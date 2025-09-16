@@ -22,14 +22,19 @@ var gun_rotation : float
 		player_id = id
 		input.set_multiplayer_authority(id)
 
+func _get_gun_position()-> Vector2:
+	return default_gun.global_position
+	
 func _ready():	
 	if multiplayer.get_unique_id() == player_id:
 		$Camera2D.make_current()
+		default_gun.player_id = player_id
+		rollback_synchronizer.process_settings()
+		default_gun.input = input
+		default_gun.global_position
 	else:
 		$Camera2D.enabled = false
-	default_gun.player_id = player_id
-	rollback_synchronizer.process_settings()
-	default_gun.input = input
+	
 	NetworkTime.on_tick.connect(_tick)
 
 func _apply_animations(delta):
@@ -37,9 +42,9 @@ func _apply_animations(delta):
 	var direction = input.input_direction
 	
 	# Flip the Sprite
-	if direction > 0:
+	if input.aim.x > 0:
 		animated_sprite.flip_h = false
-	elif direction < 0:
+	elif input.aim.x < 0:
 		animated_sprite.flip_h = true
 	
 	# Play animations
@@ -58,7 +63,11 @@ func _tick(_delta: float, _t: int):
 func _rollback_tick(delta, tick, is_fresh):
 	if not _respawning:
 		_apply_movement_from_input(delta)
-		default_gun.look_at(get_global_mouse_position())
+		default_gun.look_at(input.aim)
+		#if input.aim:
+		#else:
+		#	print("no input.aim")
+
 	else:
 		_respawning = false
 		position = MultiplayerManager.respawn_point

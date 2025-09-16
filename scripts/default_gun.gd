@@ -6,7 +6,7 @@ class_name BrawlerWeapon
 @export var input : PlayerInput
 #@onready var input: PlayerInput = $"../../Input"
 @onready var sound: AudioStreamPlayer2D = $AudioStreamPlayer2D
-@onready var bullet_spawner = $MultiplayerSpawner
+#@onready var bullet_spawner = $MultiplayerSpawner
 @onready var spawn_path = "/root/Game/Players"
 var last_fire: int = -1
 
